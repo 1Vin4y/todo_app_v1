@@ -1,0 +1,1 @@
+enum AppFlowType { normal, onboard }
