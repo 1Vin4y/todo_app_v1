@@ -3,10 +3,9 @@ import 'package:get/get.dart';
 import 'package:todo_app/data/api/api_function.dart';
 import 'package:todo_app/data/handler/api_urls.dart';
 import 'package:todo_app/data/model/get_todo_model.dart';
+import 'package:todo_app/utils/local_storage.dart';
 import 'package:todo_app/utils/utils.dart';
 import 'package:todo_app/view/home/home_controller.dart';
-
-
 
 class TodoRepository {
   TodoRepository._();
@@ -15,75 +14,126 @@ class TodoRepository {
   /// *                                    GET METHOD                                    *
   /// ***********************************************************************************
 
-  static Future<void> getTodoApi({RxBool? isLoader, bool isInitial = true}) async {
-    if (isRegistered<HomeController>()) {
-      if (await getConnectivityResult(isLoader: isLoader)) {
-        try {
-          isLoader?.value = true;
-          await ApiFunction.getApiCall(
-            apiName: ApiUrls.getTodoApi,
-            showErrorToast: false,
-          ).then((response) {
-            if (response != null && response is List) {
-              final List<GetTodoModel> getTodos = response.map((item) => GetTodoModel.fromJson(item as Map<String, dynamic>)).toList();
-              final HomeController controller = Get.find<HomeController>();
-
-              if (isInitial) {
-                controller.todoList.assignAll(getTodos);
-              } else {
-                controller.todoList.addAll(getTodos);
-              }
-              controller.todoList.refresh();
-            } else {
-              debugPrint("Unexpected response format: $response");
-            }
-          });
-          isLoader?.value = false;
-        } catch (e) {
-          isLoader?.value = false;
-          debugPrint("Error Msg : $e");
-        }
-      }
-    }
-  }
   // static Future<void> getTodoApi({RxBool? isLoader, bool isInitial = true}) async {
-  //   if (!isRegistered<HomeController>()) return;
+  //   if (isRegistered<HomeController>()) {
+  //     if (await getConnectivityResult(isLoader: isLoader)) {
+  //       try {
+  //         isLoader?.value = true;
+  //         await ApiFunction.getApiCall(
+  //           apiName: ApiUrls.getTodoApi,
+  //           showErrorToast: false,
+  //         ).then((response) {
+  //           if (response != null && response is List) {
+  //             List tempRes = response;
+  //             final List<GetTodoModel> getTodos = tempRes.map((item) => GetTodoModel.fromJson(item)).toList();
+  //             final HomeController controller = Get.find<HomeController>();
+  //             if (isInitial) {
+  //               controller.todoList.assignAll(getTodos);
+  //             } else {
+  //               controller.todoList.addAll(getTodos);
+  //             }
 
-  //   final HomeController controller = Get.find<HomeController>();
-
-  //   final hasInternet = await getConnectivityResult(isLoader: isLoader);
-  //   if (hasInternet) {
-  //     try {
-  //       isLoader?.value = true;
-
-  //       final response = await ApiFunction.getApiCall(
-  //         apiName: ApiUrls.getTodoApi,
-  //         showErrorToast: false,
-  //       );
-
-  //       if (response != null && response is List) {
-  //         final List<GetTodoModel> getTodos = response.map((item) => GetTodoModel.fromJson(item as Map<String, dynamic>)).toList();
-
-  //         // ✅ Save to local storage
-  //         LocalStorage.saveTodoList(getTodos);
-
-  //         // ✅ Update controller
-  //         controller.todoList.assignAll(getTodos);
-  //         controller.todoList.refresh();
+  //             controller.todoList.refresh();
+  //             LocalStorage.saveTodoList(controller.todoList);
+  //           } else {
+  //             debugPrint("Unexpected response format: $response");
+  //           }
+  //         });
+  //         isLoader?.value = false;
+  //       } catch (e) {
+  //         isLoader?.value = false;
+  //         debugPrint("Error Msg : $e");
   //       }
-  //     } catch (e) {
-  //       debugPrint("Error Msg: $e");
-  //     } finally {
-  //       isLoader?.value = false;
+  //     } else {
+  //       LocalStorage.getTodoList();
   //     }
-  //   } else {
-  //     // ❌ Offline: Load from local storage
-  //     final List<GetTodoModel> localTodos = LocalStorage.getTodoList();
-  //     controller.todoList.assignAll(localTodos);
-  //     controller.todoList.refresh();
   //   }
   // }
 
+//   static Future<void> getTodoApi({RxBool? isLoader, bool isInitial = true}) async {
+//     if (isRegistered<HomeController>()) {
+//       final HomeController controller = Get.find<HomeController>();
+
+//       if (await getConnectivityResult(isLoader: isLoader)) {
+//         try {
+//           isLoader?.value = true;
+
+//           await ApiFunction.getApiCall(
+//             apiName: ApiUrls.getTodoApi,
+//             showErrorToast: false,
+//           ).then((response) {
+//             if (response != null && response is List) {
+//               List tempRes = response;
+//               final List<GetTodoModel> getTodos = tempRes.map((item) => GetTodoModel.fromJson(item)).toList();
+
+//               if (isInitial) {
+//                 controller.todoList.assignAll(getTodos);
+//               } else {
+//                 controller.todoList.addAll(getTodos);
+//               }
+
+//               controller.todoList.refresh();
+
+//               LocalStorage.saveTodoList(controller.todoList);
+//             } else {
+//               debugPrint("Unexpected response format: $response");
+//             }
+//           });
+
+//           isLoader?.value = false;
+//         } catch (e) {
+//           isLoader?.value = false;
+//           debugPrint("Error Msg : $e");
+//         }
+//       // } else {
+//       //   final List<GetTodoModel> localTodos = LocalStorage.getTodoList();
+//       //   controller.todoList.assignAll(localTodos);
+//       //   controller.todoList.refresh();
+//       // }
+//       } else {
+//   final List<GetTodoModel> localTodos = LocalStorage.getTodoList();
+//   final HomeController controller = Get.find<HomeController>();
+//   controller.todoList.assignAll(localTodos);
+//   controller.todoList.refresh();
+//   controller.isLoading.value = false; // Ensure loader hides
+// }
+
+//     }
+//   }
+static Future<void> getTodoApi({RxBool? isLoader, bool isInitial = true}) async {
+  final HomeController controller = Get.find<HomeController>();
+  
+  // Show local data immediately
+  final localTodos = LocalStorage.getTodoList();
+  if (localTodos.isNotEmpty) {
+    controller.todoList.assignAll(localTodos);
+    isLoader?.value = false;
+  }
+
+  // Only proceed with API call if online
+  if (!(await getConnectivityResult(isLoader: isLoader))) {
+    return; // Exit if offline
+  }
+
+  try {
+    isLoader?.value = true;
+    final response = await ApiFunction.getApiCall(
+      apiName: ApiUrls.getTodoApi,
+      showErrorToast: false,
+    );
+    
+    if (response != null && response is List) {
+      final getTodos = response.map((item) => GetTodoModel.fromJson(item)).toList();
+      controller.todoList.assignAll(getTodos);
+      LocalStorage.saveTodoList(controller.todoList);
+    }
+  } catch (e) {
+    debugPrint("API Error: $e");
+    // Even if API fails, we still have local data shown
+  } finally {
+    isLoader?.value = false;
+  }
+}
   /// ***********************************************************************************
   /// *                                    POST METHOD                                  *
   /// ***********************************************************************************
@@ -96,8 +146,8 @@ class TodoRepository {
           if (!isValEmpty(subtitle)) "subtitle": subtitle,
           if (!isValEmpty(isCompleted)) "isCompleted": isCompleted,
         }).then((response) {
-          if (response != null && response['success'] == true) {
-            onSuccess!(response);
+          if (response != null) {
+            onSuccess!(response).call();
           }
           isLoader?.value = false;
           return response;
@@ -118,7 +168,7 @@ class TodoRepository {
         isLoader?.value = true;
         await ApiFunction.deleteApiCall(apiName: ApiUrls.deleteTodoApi(id: id!)).then((response) async {
           isLoader?.value = false;
-          if (response != null && response['success'] == true) {
+          if (response != null) {
             if (isRegistered<HomeController>()) {
               final HomeController controller = Get.find<HomeController>();
 
@@ -163,7 +213,7 @@ class TodoRepository {
         ).then((response) async {
           isLoader?.value = false;
 
-          if (response != null && response['success'] == true) {
+          if (response != null) {
             if (onSuccess != null) {
               onSuccess();
             }

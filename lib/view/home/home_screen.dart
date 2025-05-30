@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:todo_app/data/repository/todo_repository.dart';
 import 'package:todo_app/utils/app_colors.dart';
 import 'package:todo_app/utils/app_text_style.dart';
@@ -21,7 +20,9 @@ class HomeScreen extends StatelessWidget {
           centerTitle: true,
         ),
         floatingActionButton: FloatingActionButton(
-          //review needed
+          /// ***********************************************************************************
+          /// *                                  review needed                                       *
+          /// ***********************************************************************************
           onPressed: () => controller.showAddDialog(context),
           child: Icon(Icons.add),
         ),
@@ -49,7 +50,7 @@ class HomeScreen extends StatelessWidget {
                             elevation: 1,
                             margin: EdgeInsets.zero,
                             child: ListTile(
-                              leading: Text(todo.id ?? '', style: AppTextStyles.todoSubtitle),
+                              leading: Text((index + 1).toString(), style: AppTextStyles.todoSubtitle),
                               title: Text(todo.title ?? '', style: AppTextStyles.todoTitle),
                               subtitle: Text(todo.subtitle ?? '', style: AppTextStyles.todoSubtitle),
                               trailing: Row(
@@ -57,7 +58,10 @@ class HomeScreen extends StatelessWidget {
                                 children: [
                                   IconButton(
                                     onPressed: () {
-                                      controller.showUpdateDialog(context, todo); //review needed
+                                      /// ***********************************************************************************
+                                      /// *                                    //review needed                                       *
+                                      /// ***********************************************************************************
+                                      controller.showUpdateDialog(context, todo);
                                     },
                                     icon: Icon(
                                       Icons.edit,
@@ -66,6 +70,9 @@ class HomeScreen extends StatelessWidget {
                                   ),
                                   IconButton(
                                     //review needed
+                                    /// ***********************************************************************************
+                                    /// *                                    //review needed                                    *
+                                    /// ***********************************************************************************
                                     onPressed: () async {
                                       await TodoRepository.deleteTodoApi(
                                         isLoader: controller.isLoading,
@@ -75,11 +82,6 @@ class HomeScreen extends StatelessWidget {
                                         isLoader: controller.isLoading,
                                       );
 
-
-                                      final myValue =  GetStorage().write('title', controller.titleController.value.text);
-                                      debugPrint("my value : ${myValue.toString()}");
-
-                                      
                                       // await TodoRepository.deleteTodoApi(
                                       //     isLoader: controller.isLoading,
                                       //     id: todo.id,
