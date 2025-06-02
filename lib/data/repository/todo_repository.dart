@@ -14,146 +14,76 @@ class TodoRepository {
   /// *                                    GET METHOD                                    *
   /// ***********************************************************************************
 
-  // static Future<void> getTodoApi({RxBool? isLoader, bool isInitial = true}) async {
-  //   if (isRegistered<HomeController>()) {
-  //     if (await getConnectivityResult(isLoader: isLoader)) {
-  //       try {
-  //         isLoader?.value = true;
-  //         await ApiFunction.getApiCall(
-  //           apiName: ApiUrls.getTodoApi,
-  //           showErrorToast: false,
-  //         ).then((response) {
-  //           if (response != null && response is List) {
-  //             List tempRes = response;
-  //             final List<GetTodoModel> getTodos = tempRes.map((item) => GetTodoModel.fromJson(item)).toList();
-  //             final HomeController controller = Get.find<HomeController>();
-  //             if (isInitial) {
-  //               controller.todoList.assignAll(getTodos);
-  //             } else {
-  //               controller.todoList.addAll(getTodos);
-  //             }
+  static Future<void> getTodoApi({RxBool? isLoader, bool isInitial = true}) async {
+    final HomeController controller = Get.find<HomeController>();
 
-  //             controller.todoList.refresh();
-  //             LocalStorage.saveTodoList(controller.todoList);
-  //           } else {
-  //             debugPrint("Unexpected response format: $response");
-  //           }
-  //         });
-  //         isLoader?.value = false;
-  //       } catch (e) {
-  //         isLoader?.value = false;
-  //         debugPrint("Error Msg : $e");
-  //       }
-  //     } else {
-  //       LocalStorage.getTodoList();
-  //     }
-  //   }
-  // }
-
-//   static Future<void> getTodoApi({RxBool? isLoader, bool isInitial = true}) async {
-//     if (isRegistered<HomeController>()) {
-//       final HomeController controller = Get.find<HomeController>();
-
-//       if (await getConnectivityResult(isLoader: isLoader)) {
-//         try {
-//           isLoader?.value = true;
-
-//           await ApiFunction.getApiCall(
-//             apiName: ApiUrls.getTodoApi,
-//             showErrorToast: false,
-//           ).then((response) {
-//             if (response != null && response is List) {
-//               List tempRes = response;
-//               final List<GetTodoModel> getTodos = tempRes.map((item) => GetTodoModel.fromJson(item)).toList();
-
-//               if (isInitial) {
-//                 controller.todoList.assignAll(getTodos);
-//               } else {
-//                 controller.todoList.addAll(getTodos);
-//               }
-
-//               controller.todoList.refresh();
-
-//               LocalStorage.saveTodoList(controller.todoList);
-//             } else {
-//               debugPrint("Unexpected response format: $response");
-//             }
-//           });
-
-//           isLoader?.value = false;
-//         } catch (e) {
-//           isLoader?.value = false;
-//           debugPrint("Error Msg : $e");
-//         }
-//       // } else {
-//       //   final List<GetTodoModel> localTodos = LocalStorage.getTodoList();
-//       //   controller.todoList.assignAll(localTodos);
-//       //   controller.todoList.refresh();
-//       // }
-//       } else {
-//   final List<GetTodoModel> localTodos = LocalStorage.getTodoList();
-//   final HomeController controller = Get.find<HomeController>();
-//   controller.todoList.assignAll(localTodos);
-//   controller.todoList.refresh();
-//   controller.isLoading.value = false; // Ensure loader hides
-// }
-
-//     }
-//   }
-static Future<void> getTodoApi({RxBool? isLoader, bool isInitial = true}) async {
-  final HomeController controller = Get.find<HomeController>();
-  
-  // Show local data immediately
-  final localTodos = LocalStorage.getTodoList();
-  if (localTodos.isNotEmpty) {
-    controller.todoList.assignAll(localTodos);
-    isLoader?.value = false;
-  }
-
-  // Only proceed with API call if online
-  if (!(await getConnectivityResult(isLoader: isLoader))) {
-    return; // Exit if offline
-  }
-
-  try {
-    isLoader?.value = true;
-    final response = await ApiFunction.getApiCall(
-      apiName: ApiUrls.getTodoApi,
-      showErrorToast: false,
-    );
-    
-    if (response != null && response is List) {
-      final getTodos = response.map((item) => GetTodoModel.fromJson(item)).toList();
-      controller.todoList.assignAll(getTodos);
-      LocalStorage.saveTodoList(controller.todoList);
+    // Step 1: Always load local storage first
+    final localTodos = LocalStorage.getTodoList();
+    if (localTodos.isNotEmpty) {
+      controller.todoList.assignAll(localTodos);
+      debugPrint(" Loaded ${localTodos.length} todos from local storage");
     }
-  } catch (e) {
-    debugPrint("API Error: $e");
-    // Even if API fails, we still have local data shown
-  } finally {
-    isLoader?.value = false;
+
+    //  Step 2: Check connectivity before making API call
+    if (!(await getConnectivityResult(isLoader: isLoader))) {
+      debugPrint(" Offline mode - using local data only");
+      isLoader?.value = false;
+      return;
+    }
+
+    //  Step 3: Try to fetch from API
+    try {
+      isLoader?.value = true;
+      final response = await ApiFunction.getApiCall(
+        apiName: ApiUrls.getTodoApi,
+        showErrorToast: false,
+      );
+
+      //  Step 4: If valid API data, update UI + local cache
+      if (response != null && response is List) {
+        final getTodos = response.map((item) => GetTodoModel.fromJson(item)).toList();
+        if (getTodos.isNotEmpty) {
+          controller.todoList.assignAll(getTodos);
+          LocalStorage.saveTodoList(controller.todoList);
+          debugPrint("📦 Synced ${getTodos.length} items from API to local storage");
+        }
+      }
+    } catch (e) {
+      debugPrint(" API Error: $e - keeping local data");
+    } finally {
+      isLoader?.value = false;
+    }
   }
-}
+
   /// ***********************************************************************************
   /// *                                    POST METHOD                                  *
   /// ***********************************************************************************
-  static Future<void> postTodoApi({RxBool? isLoader, bool isInitial = true, String? title, String? subtitle, bool? isCompleted, Function(dynamic response)? onSuccess}) async {
+  static Future<void> postTodoApi({
+    RxBool? isLoader,
+    bool isInitial = true,
+    String? title,
+    String? subtitle,
+    Function(Map<String, dynamic> response)? onSuccess,
+  }) async {
+    // Try to sync with API if online
     if (await getConnectivityResult(isLoader: isLoader)) {
       try {
         isLoader?.value = true;
-        await ApiFunction.postApiCall(apiName: ApiUrls.postTodoApi, showErrorToast: false, body: {
-          if (!isValEmpty(title)) "title": title,
-          if (!isValEmpty(subtitle)) "subtitle": subtitle,
-          if (!isValEmpty(isCompleted)) "isCompleted": isCompleted,
-        }).then((response) {
-          if (response != null) {
-            onSuccess!(response).call();
-          }
-          isLoader?.value = false;
-          return response;
-        });
+        final response = await ApiFunction.postApiCall(
+          apiName: ApiUrls.postTodoApi,
+          showErrorToast: false,
+          body: {
+            if (!isValEmpty(title)) "title": title,
+            if (!isValEmpty(subtitle)) "subtitle": subtitle,
+          },
+        );
+
+        if (response != null && onSuccess != null) {
+          onSuccess(response as Map<String, dynamic>);
+        }
       } catch (e) {
-        debugPrint("Error Msg :  $e");
+        debugPrint(" API Error while posting: $e - keeping local data");
+      } finally {
         isLoader?.value = false;
       }
     }
@@ -166,22 +96,24 @@ static Future<void> getTodoApi({RxBool? isLoader, bool isInitial = true}) async 
     if (await getConnectivityResult(isLoader: isLoader)) {
       try {
         isLoader?.value = true;
-        await ApiFunction.deleteApiCall(apiName: ApiUrls.deleteTodoApi(id: id!)).then((response) async {
-          isLoader?.value = false;
-          if (response != null) {
-            if (isRegistered<HomeController>()) {
-              final HomeController controller = Get.find<HomeController>();
 
-              controller.todoList.removeWhere((todo) => todo.id == id);
-            }
+        await ApiFunction.deleteApiCall(apiName: ApiUrls.deleteTodoApi(id: id ?? '')).then(
+          (response) async {
+            if (response != null) {
+              if (isRegistered<HomeController>()) {
+                final HomeController controller = Get.find<HomeController>();
 
-            if (onSuccess != null) {
-              onSuccess();
+                controller.todoList.removeWhere((todo) => todo.id == id);
+              }
+
+              if (onSuccess != null) {
+                onSuccess();
+              }
+              isLoader?.value = false;
             }
-          }
-          isLoader?.value = false;
-          return response;
-        });
+            isLoader?.value = false;
+          },
+        );
       } catch (e) {
         isLoader?.value = false;
         debugPrint("Error Msg : $e");
@@ -211,13 +143,13 @@ static Future<void> getTodoApi({RxBool? isLoader, bool isInitial = true}) async 
             if (!isValEmpty(updatedSubtitle)) "subtitle": updatedSubtitle,
           },
         ).then((response) async {
-          isLoader?.value = false;
-
           if (response != null) {
             if (onSuccess != null) {
               onSuccess();
             }
+            isLoader?.value = false;
           }
+          isLoader?.value = false;
         });
       } catch (e) {
         isLoader?.value = false;

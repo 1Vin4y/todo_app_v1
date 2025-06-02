@@ -5,52 +5,58 @@ import 'package:todo_app/data/model/get_todo_model.dart';
 
 class LocalStorage {
   LocalStorage._();
-  static GetStorage prefs = GetStorage("localStorage");
+  static late GetStorage prefs;
   static RxString accessToken = "".obs;
 
   static const String todoListKey = "TODO_LIST";
-  static void saveTodoList(List<GetTodoModel> todos) {
-    final List<Map<String, dynamic>> jsonList = todos.map((e) => e.toJson()).toList();
-    prefs.write(todoListKey, jsonList);
+
+  static Future<void> init() async {
+    await GetStorage.init("localStorage");
+    prefs = GetStorage("localStorage");
+    debugPrint(" LocalStorage initialized");
   }
 
-  // static List<GetTodoModel> getTodoList() {
-  //   final jsonList = prefs.read<List>(todoListKey);
-  //   if (jsonList != null) {
-  //     return jsonList.map((e) => GetTodoModel.fromJson(Map<String, dynamic>.from(e))).toList();
-  //   } else {
-  //     return [];
-  //   }
-  // }
+  static void saveTodoList(List<GetTodoModel> todos) {
+    try {
+      final List<Map<String, dynamic>> jsonList = todos.map((e) => e.toJson()).toList();
+      prefs.write(todoListKey, jsonList);
+      debugPrint(" Saved ${todos.length} todos to local storage");
+    } catch (e) {
+      debugPrint(" Error saving todos to local storage: $e");
+    }
+  }
+
   static List<GetTodoModel> getTodoList() {
-  final jsonList = prefs.read<List>(todoListKey);
-  debugPrint("Local Storage Contents: ${jsonList?.length ?? 0} items"); // Add this line
-  if (jsonList != null) {
-    return jsonList.map((e) => GetTodoModel.fromJson(Map<String, dynamic>.from(e))).toList();
-  } else {
+    try {
+      final jsonList = prefs.read<List>(todoListKey);
+      debugPrint(" Reading from local storage: ${jsonList?.length ?? 0} items");
+
+      if (jsonList != null) {
+        final todos = jsonList.map((e) => GetTodoModel.fromJson(Map<String, dynamic>.from(e))).toList();
+        debugPrint("Successfully loaded ${todos.length} todos from local storage");
+        return todos;
+      }
+    } catch (e) {
+      debugPrint(" Error reading from local storage: $e");
+    }
     return [];
   }
-}
+
   static void printTodoList() {
     final todos = getTodoList();
+    debugPrint(" Current todos in local storage:");
     for (var todo in todos) {
-      debugPrint(todo.toJson().toString());
+      debugPrint("- ${todo.title} (${todo.id})");
     }
   }
 
   static void clearAll() {
-    prefs.erase();
+    try {
+      prefs.erase();
+      debugPrint(" Cleared all local storage data");
+    } catch (e) {
+      debugPrint(" Error clearing local storage: $e");
+    }
   }
 }
 
-
-               // final jsonList = getTodos.map((todo) => todo.toJson()).toList();
-              // final myVal = LocalStorage.prefs.write(LocalStorage.todoListKey, jsonList);
-              // debugPrint("my value : $myVal");
-              // final myfinalVal = LocalStorage.prefs.read(LocalStorage.todoListKey);
-              // final todoList = (jsonList).map((item) => GetTodoModel.fromJson(item)).toList();
-
-              // for (var todo in todoList) {
-              //   debugPrint("Todo title: ${todo.title}\n Todo subtitle : ${todo.subtitle}");
-              // }
-              // debugPrint("my final read value : $myfinalVal");

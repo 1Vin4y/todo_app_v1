@@ -1,11 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:get/get.dart';
 import 'package:todo_app/data/api/api_class.dart';
 import 'package:todo_app/data/handler/api_urls.dart';
-import 'package:todo_app/utils/common_enum.dart';
 import 'package:todo_app/utils/local_storage.dart';
-import 'package:todo_app/utils/onboarding_local_storage.dart';
 import 'package:todo_app/utils/utils.dart';
 
 class ApiFunction {
@@ -15,11 +12,11 @@ class ApiFunction {
   ///                                    OPTIONS & HEADER
   /// ***********************************************************************************
 
-  static Options getOptionsAndHeader({Duration? receiveTimeout, required Rx<AppFlowType> appFlowType}) => Options(
+  static Options getOptionsAndHeader({Duration? receiveTimeout}) => Options(
         receiveTimeout: receiveTimeout ?? const Duration(seconds: 7),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer ${appFlowType.value == AppFlowType.normal ? LocalStorage.accessToken.value : OnboardingLocalStorage.accessToken.value}",
+          "Authorization": "Bearer ${LocalStorage.accessToken.value}",
           //   "platform": APIPlatform.app.name,
         },
       );
@@ -40,7 +37,7 @@ class ApiFunction {
         body: body,
         queryParameters: params,
         isDecode: isDecode ?? false,
-        options: getOptionsAndHeader(receiveTimeout: receiveTimeout, appFlowType: AppFlowType.normal.obs),
+        options: getOptionsAndHeader(receiveTimeout: receiveTimeout),
       );
       return response;
     }
