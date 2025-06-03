@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:todo_app/utils/app_colors.dart';
 import 'package:todo_app/utils/local_storage.dart';
 import 'package:todo_app/view/home/home_screen.dart';
 
-import 'utils/app_colors.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,8 +37,8 @@ class TodoApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           title: 'Todo App',
           theme: ThemeData(
-            primarySwatch: Colors.blue,
-            scaffoldBackgroundColor: AppColors.darkPurpleColor,
+          
+            scaffoldBackgroundColor: AppColors.lightGreen1Color,
           ),
           home: child,
         );

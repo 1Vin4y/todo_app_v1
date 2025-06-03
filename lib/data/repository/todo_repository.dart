@@ -15,42 +15,53 @@ class TodoRepository {
   /// ***********************************************************************************
 
   static Future<void> getTodoApi({RxBool? isLoader, bool isInitial = true}) async {
-    final HomeController controller = Get.find<HomeController>();
+ 
+    if (await getConnectivityResult(isLoader: isLoader)) {
+     
+      if (Get.isRegistered<HomeController>()) {
+        final HomeController controller = Get.find<HomeController>();
 
-    // Step 1: Always load local storage first
-    final localTodos = LocalStorage.getTodoList();
-    if (localTodos.isNotEmpty) {
-      controller.todoList.assignAll(localTodos);
-      debugPrint(" Loaded ${localTodos.length} todos from local storage");
-    }
+        try {
+          isLoader?.value = true;
 
-    //  Step 2: Check connectivity before making API call
-    if (!(await getConnectivityResult(isLoader: isLoader))) {
-      debugPrint(" Offline mode - using local data only");
-      isLoader?.value = false;
-      return;
-    }
+       
+          final localTodos = LocalStorage.getTodoList();
+          if (localTodos.isNotEmpty) {
+            controller.todoList.assignAll(localTodos);
+            debugPrint(" Loaded ${localTodos.length} todos from local storage");
+          }
 
-    //  Step 3: Try to fetch from API
-    try {
-      isLoader?.value = true;
-      final response = await ApiFunction.getApiCall(
-        apiName: ApiUrls.getTodoApi,
-        showErrorToast: false,
-      );
+   
+          await ApiFunction.getApiCall(
+            apiName: ApiUrls.getTodoApi,
+            showErrorToast: false,
+          ).then((response) {
+            if (response != null && response is List) {
+              final getTodos = response.map((item) => GetTodoModel.fromJson(item)).toList();
 
-      //  Step 4: If valid API data, update UI + local cache
-      if (response != null && response is List) {
-        final getTodos = response.map((item) => GetTodoModel.fromJson(item)).toList();
-        if (getTodos.isNotEmpty) {
-          controller.todoList.assignAll(getTodos);
-          LocalStorage.saveTodoList(controller.todoList);
-          debugPrint("📦 Synced ${getTodos.length} items from API to local storage");
+              if (getTodos.isNotEmpty) {
+                controller.todoList.assignAll(getTodos);
+                LocalStorage.saveTodoList(controller.todoList);
+                debugPrint(" Synced ${getTodos.length} items from API to local storage");
+              }
+            }
+          });
+        } catch (e) {
+          debugPrint(" API Error: $e - keeping local data");
+        } finally {
+          isLoader?.value = false;
         }
       }
-    } catch (e) {
-      debugPrint(" API Error: $e - keeping local data");
-    } finally {
+    } else {
+  
+      if (Get.isRegistered<HomeController>()) {
+        final HomeController controller = Get.find<HomeController>();
+        final localTodos = LocalStorage.getTodoList();
+        if (localTodos.isNotEmpty) {
+          controller.todoList.assignAll(localTodos);
+          debugPrint("Offline - loaded ${localTodos.length} todos from local storage");
+        }
+      }
       isLoader?.value = false;
     }
   }
@@ -69,18 +80,18 @@ class TodoRepository {
     if (await getConnectivityResult(isLoader: isLoader)) {
       try {
         isLoader?.value = true;
-        final response = await ApiFunction.postApiCall(
+        await ApiFunction.postApiCall(
           apiName: ApiUrls.postTodoApi,
           showErrorToast: false,
           body: {
             if (!isValEmpty(title)) "title": title,
             if (!isValEmpty(subtitle)) "subtitle": subtitle,
           },
-        );
-
-        if (response != null && onSuccess != null) {
-          onSuccess(response as Map<String, dynamic>);
-        }
+        ).then((response) {
+          if (response != null && onSuccess != null) {
+            onSuccess(response as Map<String, dynamic>);
+          }
+        });
       } catch (e) {
         debugPrint(" API Error while posting: $e - keeping local data");
       } finally {
@@ -107,7 +118,7 @@ class TodoRepository {
               }
 
               if (onSuccess != null) {
-                onSuccess();
+                onSuccess().call();
               }
               isLoader?.value = false;
             }
