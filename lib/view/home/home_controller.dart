@@ -9,6 +9,8 @@ class HomeController extends GetxController {
   Rx<TextEditingController> titleController = TextEditingController().obs;
   Rx<TextEditingController> subtitleController = TextEditingController().obs;
   RxList<GetTodoModel> todoList = <GetTodoModel>[].obs;
+  RxMap<String, bool> completedTodos = <String, bool>{}.obs;
+
   RxString id = ''.obs;
   RxString deletingId = ''.obs;
   RxString editingId = ''.obs;
@@ -22,6 +24,8 @@ class HomeController extends GetxController {
 
   void loadLocalDataThenApi() {
     TodoRepository.getTodoApi(isInitial: true, isLoader: isLoading);
+    titleController.value.clear();
+    subtitleController.value.clear();
   }
 
   // Helper method to delete todo locally

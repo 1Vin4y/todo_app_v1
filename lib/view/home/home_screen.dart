@@ -7,8 +7,8 @@ import 'package:todo_app/data/model/get_todo_model.dart';
 import 'package:todo_app/data/repository/todo_repository.dart';
 import 'package:todo_app/utils/app_colors.dart';
 import 'package:todo_app/utils/app_text_style.dart';
-import 'package:todo_app/utils/utils.dart';
 import 'package:todo_app/view/home/home_controller.dart';
+import 'package:todo_app/view/todos/add_todo.dart';
 import 'package:todo_app/widget/app_dialog.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -24,7 +24,7 @@ class HomeScreen extends StatelessWidget {
       () => Scaffold(
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         appBar: AppBar(
-          backgroundColor: AppColors.lightGreen4Color,
+          backgroundColor: AppColors.lightPeachColor,
           title: RichText(
             text: TextSpan(
               children: [
@@ -45,8 +45,12 @@ class HomeScreen extends StatelessWidget {
         ),
         body: controller.todoList.isNotEmpty
             ? RefreshIndicator(
+                color: AppColors.darkPurpleColor,
+                backgroundColor: AppColors.lightPeachColor,
                 onRefresh: () async => await TodoRepository.getTodoApi(),
                 child: ListView.builder(
+                  // padding: EdgeInsets.only(bottom: 85.h),
+                  padding: EdgeInsets.only(top: 15.h, bottom: 85.h),
                   itemCount: controller.todoList.length,
                   itemBuilder: (context, index) {
                     final todo = controller.todoList[index];
@@ -59,28 +63,16 @@ class HomeScreen extends StatelessWidget {
           width: 60.w,
           height: 60.h,
           decoration: BoxDecoration(
+            border: Border.all(),
             shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [
-                // ignore: deprecated_member_use
-                AppColors.lightGreen4Color.withOpacity(0.8),
-                AppColors.lightGreen4Color,
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                // ignore: deprecated_member_use
-                color: AppColors.lightGreen4Color.withOpacity(0.6),
-                blurRadius: 15,
-                spreadRadius: 3,
-              ),
-            ],
           ),
           child: FloatingActionButton(
-            backgroundColor: AppColors.greenColor,
-            onPressed: () => AppDialog.showAddDialog(context),
+            backgroundColor: AppColors.lightPeachColor,
+            onPressed: () => Get.to(
+              AddTodo(),
+            ),
             shape: const CircleBorder(),
-            child: const Icon(Icons.add, color: Colors.white),
+            child: const Icon(Icons.add, color: AppColors.darkPurpleColor),
           ),
         ),
       ),
@@ -88,41 +80,48 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildTodoTile(BuildContext context, GetTodoModel todo, int index) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 15.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.lightGreen4Color,
-            offset: Offset(0, 4),
-            blurRadius: 12,
-            spreadRadius: 0,
+    return Obx(() {
+      final isCompleted = controller.completedTodos[todo.id] ?? false;
+
+      return Container(
+        margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: isCompleted ? Colors.grey.shade200 : AppColors.peachColor,
+          border: Border.all(width: 1.5.w),
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: ListTile(
+          titleAlignment: ListTileTitleAlignment.top,
+          contentPadding: EdgeInsets.only(left: 8.w),
+          leading: Checkbox(
+            checkColor: AppColors.darkPurpleColor,
+            activeColor: AppColors.transparentColor,
+            value: isCompleted,
+            onChanged: (value) {
+              controller.completedTodos[todo.id ?? ''] = value ?? false;
+            },
           ),
-        ],
-        color: AppColors.lightGreen3Color,
-        border: Border.all(color: AppColors.lightGreen4Color, width: 1.5.w),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
-        ),
-      ),
-      child: ListTile(
-        titleAlignment: ListTileTitleAlignment.top,
-        contentPadding: EdgeInsets.only(
-          left: 16.w,
-        ),
-        leading: Text((index + 1).toString(), style: AppTextStyles.todoSubtitle),
-        title: Text((todo.title ?? '').toUpperCase(), style: AppTextStyles.todoTitle.copyWith(color: AppColors.greenColor)),
-        subtitle: Text(todo.subtitle ?? '', style: AppTextStyles.todoSubtitle),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              onPressed: () => AppDialog.showUpdateDialog(context, todo),
-              icon: Icon(Icons.edit, color: AppColors.black54),
+          title: Text(
+            (todo.title ?? '').trim().toUpperCase(),
+            style: AppTextStyles.todoTitle.copyWith(
+              color: AppColors.darkPurpleColor,
+              decoration: isCompleted ? TextDecoration.lineThrough : null,
             ),
-            Obx(
-              () {
+          ),
+          subtitle: Text(
+            (todo.subtitle ?? '').trim(),
+            style: AppTextStyles.todoSubtitle.copyWith(
+              decoration: isCompleted ? TextDecoration.lineThrough : null,
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                onPressed: () => AppDialog.showUpdateDialog(context, todo),
+                icon: Icon(Icons.edit, color: AppColors.black54),
+              ),
+              Obx(() {
                 final isDeleting = controller.deletingId.value == todo.id;
                 return IconButton(
                   onPressed: () async {
@@ -130,38 +129,33 @@ class HomeScreen extends StatelessWidget {
                     await TodoRepository.deleteTodoApi(id: todo.id);
                     controller.deleteTodoLocally(todo.id ?? '');
                     controller.deletingId.value = '';
-                    if (await getConnectivityResult()) {
-                      Get.snackbar(
-                        'Deleted',
-                        'Todo Deleted',
-                        icon: Icon(Icons.delete, color: AppColors.whiteColor),
-                        backgroundColor: AppColors.orangeColor,
-                        colorText: AppColors.whiteColor,
-                      );
-                    } else {
-                      Get.snackbar(
-                        'Deleted',
-                        'Todo Deleted Locally',
-                        icon: Icon(Icons.delete, color: AppColors.whiteColor),
-                        backgroundColor: AppColors.orangeColor,
-                        colorText: AppColors.whiteColor,
-                      );
-                    }
+                    Get.snackbar(
+                      'Deleted',
+                      'Todo Deleted',
+                      snackPosition: SnackPosition.BOTTOM,
+                      icon: Icon(Icons.delete, color: AppColors.whiteColor),
+                      backgroundColor: AppColors.orangeColor,
+                      colorText: AppColors.whiteColor,
+                      duration: Duration(milliseconds: 1500),
+                    );
                   },
                   icon: isDeleting
                       ? SizedBox(
                           width: 15.w,
-                          height: 15.h,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          height: 14.h,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.darkPurpleColor,
+                          ),
                         )
-                      : Icon(Icons.delete, color: AppColors.orangeColor),
+                      : Icon(Icons.delete, color: isCompleted ? AppColors.greyColor : AppColors.orangeColor),
                 );
-              },
-            ),
-          ],
+              }),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildEmptyState() {

@@ -4,9 +4,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:todo_app/utils/app_colors.dart';
 import 'package:todo_app/utils/local_storage.dart';
+import 'package:todo_app/utils/routes/app_pages.dart';
+import 'package:todo_app/utils/routes/app_routes.dart';
 import 'package:todo_app/view/home/home_screen.dart';
-
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,10 +35,11 @@ class TodoApp extends StatelessWidget {
       builder: (context, child) {
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,
+          initialRoute: AppRoutes.home,
+          getPages: AppPages.pages,
           title: 'Todo App',
           theme: ThemeData(
-          
-            scaffoldBackgroundColor: AppColors.lightGreen1Color,
+            scaffoldBackgroundColor: AppColors.lightPeach1Color,
           ),
           home: child,
         );

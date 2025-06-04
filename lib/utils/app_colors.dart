@@ -29,4 +29,9 @@ class AppColors {
   static const Color lightGreen2Color = Color(0xFFDDF6D2);
   static const Color lightGreen3Color = Color(0xFFCAE8BD);
   static const Color lightGreen4Color = Color(0xFFB0DB9C);
+
+  static const Color peachColor = Color(0xffFAF1E6);
+  static const Color lightPeach1Color = Color(0xFFFDFAF6);
+  static const Color lightGreenColor = Color(0xFFE4EFE7);
+  static const Color mediumGreenColor = Color(0xFF99BC85);
 }
