@@ -69,8 +69,8 @@ class HomeScreen extends StatelessWidget {
           child: FloatingActionButton(
             backgroundColor: AppColors.lightPeachColor,
             onPressed: () {
-              // controller.titleController.value.clear();
-              // controller.subtitleController.value.clear();
+              controller.titleController.value.clear();
+              controller.subtitleController.value.clear();
               Get.toNamed(AppRoutes.addTodo);
             },
             shape: const CircleBorder(),
@@ -130,39 +130,37 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               3.horizontalSpace,
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (!isCompleted)
-                    GestureDetector(
-                      onTap: () => AppDialog.showUpdateDialog(context, todo),
-                      child: Icon(Icons.edit, color: AppColors.black54),
+              Obx(() {
+                final isDeleting = controller.deletingId.value == todo.id;
+
+                return Row(
+                  children: [
+                    if (!isCompleted && !isDeleting)
+                      GestureDetector(
+                        onTap: () => AppDialog.showUpdateDialog(context, todo),
+                        child: Icon(Icons.edit, color: AppColors.black54),
+                      ),
+                    IconButton(
+                      onPressed: () async {
+                        controller.deletingId.value = todo.id ?? '';
+                        await TodoRepository.deleteTodoApi(id: todo.id);
+                        controller.deleteTodoLocally(todo.id ?? '');
+                        controller.deletingId.value = '';
+                      },
+                      icon: isDeleting
+                          ? SizedBox(
+                              width: 15.w,
+                              height: 14.h,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.darkPurpleColor,
+                              ),
+                            )
+                          : Icon(Icons.delete, color: AppColors.orangeColor),
                     ),
-                  Obx(
-                    () {
-                      final isDeleting = controller.deletingId.value == todo.id;
-                      return IconButton(
-                        onPressed: () async {
-                          controller.deletingId.value = todo.id ?? '';
-                          await TodoRepository.deleteTodoApi(id: todo.id);
-                          controller.deleteTodoLocally(todo.id ?? '');
-                          controller.deletingId.value = '';
-                        },
-                        icon: isDeleting
-                            ? SizedBox(
-                                width: 15.w,
-                                height: 14.h,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.darkPurpleColor,
-                                ),
-                              )
-                            : Icon(Icons.delete, color: AppColors.orangeColor),
-                      );
-                    },
-                  ),
-                ],
-              ),
+                  ],
+                );
+              }),
             ],
           ),
         ),

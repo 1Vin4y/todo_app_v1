@@ -21,6 +21,7 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     debugPrint(" HomeController initialized");
+    completedTodos.clear();
     loadLocalDataThenApi();
   }
 
@@ -33,6 +34,7 @@ class HomeController extends GetxController {
   // Helper method to delete todo locally
   void deleteTodoLocally(String todoId) {
     todoList.removeWhere((todo) => todo.id == todoId);
+    completedTodos.remove(todoId);
     LocalStorage.saveTodoList(todoList);
     debugPrint(" Deleted todo locally: $todoId");
   }
@@ -55,7 +57,7 @@ class HomeController extends GetxController {
   @override
   void onClose() {
     super.onClose();
-   
+
     titleController.value.dispose();
     subtitleController.value.dispose();
   }

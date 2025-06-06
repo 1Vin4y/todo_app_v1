@@ -45,7 +45,7 @@ class AppDialog {
               onTap: !isSaving.value
                   ? () {
                       Get.back();
-                      
+               
                     }
                   : () {
                       controller.titleController.value.clear();
