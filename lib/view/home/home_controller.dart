@@ -8,6 +8,8 @@ class HomeController extends GetxController {
   RxBool isLoading = true.obs;
   Rx<TextEditingController> titleController = TextEditingController().obs;
   Rx<TextEditingController> subtitleController = TextEditingController().obs;
+  final GlobalKey<FormState> updateFormKey = GlobalKey<FormState>();
+
   RxList<GetTodoModel> todoList = <GetTodoModel>[].obs;
   RxMap<String, bool> completedTodos = <String, bool>{}.obs;
 
@@ -23,9 +25,9 @@ class HomeController extends GetxController {
   }
 
   void loadLocalDataThenApi() {
-    TodoRepository.getTodoApi(isInitial: true, isLoader: isLoading);
     titleController.value.clear();
     subtitleController.value.clear();
+    TodoRepository.getTodoApi(isInitial: true, isLoader: isLoading);
   }
 
   // Helper method to delete todo locally
@@ -48,5 +50,13 @@ class HomeController extends GetxController {
       LocalStorage.saveTodoList(todoList);
       debugPrint(" Updated todo locally: $todoId");
     }
+  }
+
+  @override
+  void onClose() {
+    super.onClose();
+   
+    titleController.value.dispose();
+    subtitleController.value.dispose();
   }
 }

@@ -7,8 +7,8 @@ import 'package:todo_app/data/model/get_todo_model.dart';
 import 'package:todo_app/data/repository/todo_repository.dart';
 import 'package:todo_app/utils/app_colors.dart';
 import 'package:todo_app/utils/app_text_style.dart';
+import 'package:todo_app/utils/routes/app_routes.dart';
 import 'package:todo_app/view/home/home_controller.dart';
-import 'package:todo_app/view/todos/add_todo.dart';
 import 'package:todo_app/widget/app_dialog.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -22,8 +22,8 @@ class HomeScreen extends StatelessWidget {
 
     return Obx(
       () => Scaffold(
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         appBar: AppBar(
+          surfaceTintColor: AppColors.lightPeachColor,
           backgroundColor: AppColors.lightPeachColor,
           title: RichText(
             text: TextSpan(
@@ -49,7 +49,6 @@ class HomeScreen extends StatelessWidget {
                 backgroundColor: AppColors.lightPeachColor,
                 onRefresh: () async => await TodoRepository.getTodoApi(),
                 child: ListView.builder(
-                  // padding: EdgeInsets.only(bottom: 85.h),
                   padding: EdgeInsets.only(top: 15.h, bottom: 85.h),
                   itemCount: controller.todoList.length,
                   itemBuilder: (context, index) {
@@ -60,6 +59,7 @@ class HomeScreen extends StatelessWidget {
               )
             : _buildEmptyState(),
         floatingActionButton: Container(
+          margin: EdgeInsets.only(right: 8.w),
           width: 60.w,
           height: 60.h,
           decoration: BoxDecoration(
@@ -68,9 +68,11 @@ class HomeScreen extends StatelessWidget {
           ),
           child: FloatingActionButton(
             backgroundColor: AppColors.lightPeachColor,
-            onPressed: () => Get.to(
-              AddTodo(),
-            ),
+            onPressed: () {
+              // controller.titleController.value.clear();
+              // controller.subtitleController.value.clear();
+              Get.toNamed(AppRoutes.addTodo);
+            },
             shape: const CircleBorder(),
             child: const Icon(Icons.add, color: AppColors.darkPurpleColor),
           ),
@@ -90,67 +92,77 @@ class HomeScreen extends StatelessWidget {
           border: Border.all(width: 1.5.w),
           borderRadius: BorderRadius.circular(20.r),
         ),
-        child: ListTile(
-          titleAlignment: ListTileTitleAlignment.top,
-          contentPadding: EdgeInsets.only(left: 8.w),
-          leading: Checkbox(
-            checkColor: AppColors.darkPurpleColor,
-            activeColor: AppColors.transparentColor,
-            value: isCompleted,
-            onChanged: (value) {
-              controller.completedTodos[todo.id ?? ''] = value ?? false;
-            },
-          ),
-          title: Text(
-            (todo.title ?? '').trim().toUpperCase(),
-            style: AppTextStyles.todoTitle.copyWith(
-              color: AppColors.darkPurpleColor,
-              decoration: isCompleted ? TextDecoration.lineThrough : null,
-            ),
-          ),
-          subtitle: Text(
-            (todo.subtitle ?? '').trim(),
-            style: AppTextStyles.todoSubtitle.copyWith(
-              decoration: isCompleted ? TextDecoration.lineThrough : null,
-            ),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IconButton(
-                onPressed: () => AppDialog.showUpdateDialog(context, todo),
-                icon: Icon(Icons.edit, color: AppColors.black54),
+              Checkbox(
+                checkColor: AppColors.darkPurpleColor,
+                activeColor: AppColors.transparentColor,
+                value: isCompleted,
+                onChanged: (value) {
+                  controller.completedTodos[todo.id ?? ''] = value ?? false;
+                },
               ),
-              Obx(() {
-                final isDeleting = controller.deletingId.value == todo.id;
-                return IconButton(
-                  onPressed: () async {
-                    controller.deletingId.value = todo.id ?? '';
-                    await TodoRepository.deleteTodoApi(id: todo.id);
-                    controller.deleteTodoLocally(todo.id ?? '');
-                    controller.deletingId.value = '';
-                    Get.snackbar(
-                      'Deleted',
-                      'Todo Deleted',
-                      snackPosition: SnackPosition.BOTTOM,
-                      icon: Icon(Icons.delete, color: AppColors.whiteColor),
-                      backgroundColor: AppColors.orangeColor,
-                      colorText: AppColors.whiteColor,
-                      duration: Duration(milliseconds: 1500),
-                    );
-                  },
-                  icon: isDeleting
-                      ? SizedBox(
-                          width: 15.w,
-                          height: 14.h,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.darkPurpleColor,
-                          ),
-                        )
-                      : Icon(Icons.delete, color: isCompleted ? AppColors.greyColor : AppColors.orangeColor),
-                );
-              }),
+              3.horizontalSpace,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.5),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        (todo.title ?? '').trim().toUpperCase(),
+                        style: AppTextStyles.todoTitle.copyWith(
+                          color: AppColors.darkPurpleColor,
+                          decoration: isCompleted ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                      Text(
+                        (todo.subtitle ?? '').replaceAll(RegExp(r'\n+'), ' ').trim(),
+                        style: AppTextStyles.todoSubtitle.copyWith(
+                          decoration: isCompleted ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              3.horizontalSpace,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!isCompleted)
+                    GestureDetector(
+                      onTap: () => AppDialog.showUpdateDialog(context, todo),
+                      child: Icon(Icons.edit, color: AppColors.black54),
+                    ),
+                  Obx(
+                    () {
+                      final isDeleting = controller.deletingId.value == todo.id;
+                      return IconButton(
+                        onPressed: () async {
+                          controller.deletingId.value = todo.id ?? '';
+                          await TodoRepository.deleteTodoApi(id: todo.id);
+                          controller.deleteTodoLocally(todo.id ?? '');
+                          controller.deletingId.value = '';
+                        },
+                        icon: isDeleting
+                            ? SizedBox(
+                                width: 15.w,
+                                height: 14.h,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.darkPurpleColor,
+                                ),
+                              )
+                            : Icon(Icons.delete, color: AppColors.orangeColor),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ],
           ),
         ),

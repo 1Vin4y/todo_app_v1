@@ -40,6 +40,15 @@ class TodoApp extends StatelessWidget {
           title: 'Todo App',
           theme: ThemeData(
             scaffoldBackgroundColor: AppColors.lightPeach1Color,
+            textSelectionTheme: TextSelectionThemeData(
+              selectionColor: AppColors.lightPeachColor,
+              selectionHandleColor: AppColors.lightPeachColor,
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ButtonStyle(
+                overlayColor: WidgetStateProperty.all(AppColors.lightPeachColor),
+              ),
+            ),
           ),
           home: child,
         );
